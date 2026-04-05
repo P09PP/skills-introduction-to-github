@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão de Investimentos</title>
+  <style>
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #252836;
+  --border: #2e3148;
+  --text: #e8eaf0;
+  --text-muted: #8b8fa8;
+  --primary: #6c63ff;
+  --primary-dark: #5a52d5;
+  --green: #22c55e;
+  --red: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --c-etf: #6c63ff;
+  --c-ppr: #22c55e;
+  --c-acao: #f59e0b;
+  --c-obrigacao: #3b82f6;
+  --c-cripto: #ec4899;
+  --c-outro: #8b8fa8;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header h1 { font-size: 17px; font-weight: 600; }
+
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+/* Summary */
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summary-card { display: flex; flex-direction: column; gap: 6px; }
+.summary-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 500; }
+.summary-card .value { font-size: 20px; font-weight: 700; }
+.summary-card .value.positive { color: var(--green); }
+.summary-card .value.negative { color: var(--red); }
+
+/* Allocation */
+.allocation-section h2 { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+.allocation-bar { height: 10px; border-radius: 99px; overflow: hidden; display: flex; background: var(--surface2); margin-bottom: 12px; }
+.allocation-bar .seg { height: 100%; }
+.allocation-legend { display: flex; flex-wrap: wrap; gap: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* Filters */
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn { padding: 5px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 12px; cursor: pointer; }
+.filter-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+
+/* Table */
+.table-section { padding: 0; overflow-x: auto; }
+
+#investments-table { width: 100%; border-collapse: collapse; }
+#investments-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+#investments-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+#investments-table tbody tr:last-child td { border-bottom: none; }
+
+.empty-msg { text-align: center; color: var(--text-muted); padding: 40px 16px !important; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 10px; font-weight: 600; text-transform: uppercase; }
+.badge-ETF       { background: rgba(108,99,255,.15); color: var(--c-etf); }
+.badge-PPR       { background: rgba(34,197,94,.15);  color: var(--c-ppr); }
+.badge-Ação      { background: rgba(245,158,11,.15); color: var(--c-acao); }
+.badge-Obrigação { background: rgba(59,130,246,.15); color: var(--c-obrigacao); }
+.badge-Cripto    { background: rgba(236,72,153,.15); color: var(--c-cripto); }
+.badge-Outro     { background: rgba(139,143,168,.15);color: var(--c-outro); }
+
+.gain { color: var(--green); font-weight: 600; }
+.loss { color: var(--red);   font-weight: 600; }
+.flat { color: var(--text-muted); }
+
+.row-actions { display: flex; gap: 5px; justify-content: flex-end; }
+.btn-icon-sm { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.btn-icon-sm.del:active { border-color: var(--red); color: var(--red); }
+
+/* Buttons */
+.btn { padding: 8px 16px; border-radius: var(--radius-sm); border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-danger { background: var(--red); color: #fff; }
+.btn-icon { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: flex-end; justify-content: center; z-index: 200; }
+.modal-overlay.hidden { display: none; }
+
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius) var(--radius) 0 0; width: 100%; max-width: 600px; padding: 24px; max-height: 92vh; overflow-y: auto; }
+.modal-sm { border-radius: var(--radius); max-height: none; margin: auto; }
+
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.modal-header h2 { font-size: 17px; font-weight: 700; }
+.modal p { color: var(--text-muted); margin: 10px 0 20px; }
+
+.form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+
+label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+
+input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); padding: 10px 12px; font-size: 16px; /* 16px prevents iOS zoom */ width: 100%; outline: none; font-family: inherit; }
+input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+select option { background: var(--surface2); }
+textarea { resize: vertical; }
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+@media (min-width: 600px) {
+  .summary-grid { grid-template-columns: repeat(4, 1fr); }
+  .modal { border-radius: var(--radius); margin: auto; }
+  .modal-overlay { align-items: center; }
+}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Portfólio de Investimentos</h1>
+      <button id="btn-add" class="btn btn-primary">+ Adicionar</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-grid">
+      <div class="card summary-card">
+        <span class="label">Valor Investido</span>
+        <span class="value" id="total-invested">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Valor Atual</span>
+        <span class="value" id="total-current">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Ganho / Perda</span>
+        <span class="value" id="total-gain">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Rentabilidade</span>
+        <span class="value" id="total-return">0,00%</span>
+      </div>
+    </section>
+
+    <section class="card allocation-section">
+      <h2>Alocação por Tipo</h2>
+      <div id="allocation-bar" class="allocation-bar"></div>
+      <div id="allocation-legend" class="allocation-legend"></div>
+    </section>
+
+    <section class="filters">
+      <button class="filter-btn active" data-type="all">Todos</button>
+      <button class="filter-btn" data-type="ETF">ETF</button>
+      <button class="filter-btn" data-type="PPR">PPR</button>
+      <button class="filter-btn" data-type="Ação">Ação</button>
+      <button class="filter-btn" data-type="Obrigação">Obrigação</button>
+      <button class="filter-btn" data-type="Cripto">Cripto</button>
+      <button class="filter-btn" data-type="Outro">Outro</button>
+    </section>
+
+    <section class="card table-section">
+      <table id="investments-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Investido</th>
+            <th>Atual</th>
+            <th>G/P</th>
+            <th>%</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="investments-body">
+          <tr id="empty-row">
+            <td colspan="7" class="empty-msg">Sem investimentos. Toque em "+ Adicionar" para começar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Adicionar Investimento</h2>
+        <button id="modal-close" class="btn-icon">&times;</button>
+      </div>
+      <form id="investment-form">
+        <input type="hidden" id="form-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-name">Nome *</label>
+            <input type="text" id="form-name" placeholder="ex: Vanguard FTSE All-World" required />
+          </div>
+          <div class="form-group" style="max-width:110px">
+            <label for="form-ticker">Ticker</label>
+            <input type="text" id="form-ticker" placeholder="VWCE" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-type">Tipo *</label>
+            <select id="form-type" required>
+              <option value="">-- Selecionar --</option>
+              <option value="ETF">ETF</option>
+              <option value="PPR">PPR</option>
+              <option value="Ação">Ação</option>
+              <option value="Obrigação">Obrigação</option>
+              <option value="Cripto">Cripto</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-qty">Quantidade *</label>
+            <input type="number" id="form-qty" placeholder="10" min="0" step="any" inputmode="decimal" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-buy-price">Preço Compra (€) *</label>
+            <input type="number" id="form-buy-price" placeholder="100.00" min="0" step="any" inputmode="decimal" required />
+          </div>
+          <div class="form-group">
+            <label for="form-cur-price">Preço Atual (€) *</label>
+            <input type="number" id="form-cur-price" placeholder="115.50" min="0" step="any" inputmode="decimal" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="form-notes">Notas</label>
+          <textarea id="form-notes" placeholder="Informações adicionais..." rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="delete-overlay" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <h2>Confirmar eliminação</h2>
+      <p id="delete-msg">Tem a certeza?</p>
+      <div class="modal-actions">
+        <button id="delete-cancel" class="btn btn-secondary">Cancelar</button>
+        <button id="delete-confirm" class="btn btn-danger">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+'use strict';
+
+const STORAGE_KEY = 'investment_portfolio_v1';
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveData(investments) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(investments));
+}
+
+let investments = loadData();
+let activeFilter = 'all';
+let pendingDeleteId = null;
+
+function formatEur(v) {
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v);
+}
+
+function formatPct(v) {
+  return (v > 0 ? '+' : '') + v.toFixed(2).replace('.', ',') + '%';
+}
+
+function calcInvested(i) { return i.qty * i.buyPrice; }
+function calcCurrent(i)  { return i.qty * i.curPrice; }
+function calcGain(i)     { return calcCurrent(i) - calcInvested(i); }
+function calcReturn(i)   { const x = calcInvested(i); return x === 0 ? 0 : (calcGain(i) / x) * 100; }
+function gainClass(v)    { return v > 0 ? 'gain' : v < 0 ? 'loss' : 'flat'; }
+
+function typeColor(t) {
+  return { ETF:'#6c63ff', PPR:'#22c55e', 'Ação':'#f59e0b', 'Obrigação':'#3b82f6', Cripto:'#ec4899', Outro:'#8b8fa8' }[t] || '#8b8fa8';
+}
+
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function filtered() {
+  return activeFilter === 'all' ? investments : investments.filter(i => i.type === activeFilter);
+}
+
+function renderSummary() {
+  const list = filtered();
+  const ti = list.reduce((s,i) => s + calcInvested(i), 0);
+  const tc = list.reduce((s,i) => s + calcCurrent(i), 0);
+  const tg = tc - ti;
+  const tr = ti === 0 ? 0 : (tg / ti) * 100;
+
+  document.getElementById('total-invested').textContent = formatEur(ti);
+  document.getElementById('total-current').textContent  = formatEur(tc);
+
+  const ge = document.getElementById('total-gain');
+  const re = document.getElementById('total-return');
+  ge.textContent = formatEur(tg);
+  re.textContent = formatPct(tr);
+  ge.className = 'value ' + gainClass(tg);
+  re.className = 'value ' + gainClass(tr);
+}
+
+function renderAllocation() {
+  const bar = document.getElementById('allocation-bar');
+  const leg = document.getElementById('allocation-legend');
+  const total = investments.reduce((s,i) => s + calcCurrent(i), 0);
+  const groups = {};
+  for (const i of investments) groups[i.type] = (groups[i.type] || 0) + calcCurrent(i);
+
+  bar.innerHTML = leg.innerHTML = '';
+  if (total === 0) { bar.style.background = 'var(--surface2)'; return; }
+  bar.style.background = '';
+
+  Object.entries(groups).sort((a,b) => b[1]-a[1]).forEach(([type, val]) => {
+    const pct = (val / total) * 100;
+    const color = typeColor(type);
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.style.cssText = `width:${pct}%;background:${color}`;
+    bar.appendChild(seg);
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<span class="legend-dot" style="background:${color}"></span><span>${type} — ${pct.toFixed(1)}%</span>`;
+    leg.appendChild(item);
+  });
+}
+
+function renderTable() {
+  const tbody = document.getElementById('investments-body');
+  const list  = filtered();
+  tbody.innerHTML = '';
+
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">${activeFilter === 'all' ? 'Sem investimentos. Toque em "+ Adicionar" para começar.' : 'Sem investimentos nesta categoria.'}</td></tr>`;
+    return;
+  }
+
+  for (const inv of list) {
+    const gain = calcGain(inv);
+    const ret  = calcReturn(inv);
+    const gc   = gainClass(gain);
+    const tr   = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${escHtml(inv.name)}</strong>${inv.ticker ? `<br><small style="color:var(--text-muted)">${escHtml(inv.ticker)}</small>` : ''}${inv.notes ? `<br><small style="color:var(--text-muted)">${escHtml(inv.notes)}</small>` : ''}</td>
+      <td><span class="badge badge-${escHtml(inv.type)}">${escHtml(inv.type)}</span></td>
+      <td>${formatEur(calcInvested(inv))}</td>
+      <td>${formatEur(calcCurrent(inv))}</td>
+      <td class="${gc}">${formatEur(gain)}</td>
+      <td class="${gc}">${formatPct(ret)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn-icon-sm" onclick="openEdit('${inv.id}')" title="Editar">&#9998;</button>
+          <button class="btn-icon-sm del" onclick="openDelete('${inv.id}')" title="Eliminar">&#128465;</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function render() { renderSummary(); renderAllocation(); renderTable(); }
+
+function openAdd() {
+  document.getElementById('modal-title').textContent = 'Adicionar Investimento';
+  document.getElementById('investment-form').reset();
+  document.getElementById('form-id').value = '';
+  showModal('modal-overlay');
+}
+
+function openEdit(id) {
+  const inv = investments.find(i => i.id === id);
+  if (!inv) return;
+  document.getElementById('modal-title').textContent = 'Editar Investimento';
+  document.getElementById('form-id').value        = inv.id;
+  document.getElementById('form-name').value      = inv.name;
+  document.getElementById('form-ticker').value    = inv.ticker || '';
+  document.getElementById('form-type').value      = inv.type;
+  document.getElementById('form-qty').value       = inv.qty;
+  document.getElementById('form-buy-price').value = inv.buyPrice;
+  document.getElementById('form-cur-price').value = inv.curPrice;
+  document.getElementById('form-notes').value     = inv.notes || '';
+  showModal('modal-overlay');
+}
+
+function openDelete(id) {
+  const inv = investments.find(i => i.id === id);
+  if (!inv) return;
+  pendingDeleteId = id;
+  document.getElementById('delete-msg').textContent = `Tem a certeza que quer eliminar "${inv.name}"?`;
+  showModal('delete-overlay');
+}
+
+function showModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal()   { document.getElementById('modal-overlay').classList.add('hidden'); }
+function closeDelete()  { pendingDeleteId = null; document.getElementById('delete-overlay').classList.add('hidden'); }
+
+function confirmDelete() {
+  if (!pendingDeleteId) return;
+  investments = investments.filter(i => i.id !== pendingDeleteId);
+  saveData(investments);
+  render();
+  closeDelete();
+}
+
+document.getElementById('investment-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const id       = document.getElementById('form-id').value;
+  const name     = document.getElementById('form-name').value.trim();
+  const ticker   = document.getElementById('form-ticker').value.trim().toUpperCase();
+  const type     = document.getElementById('form-type').value;
+  const qty      = parseFloat(document.getElementById('form-qty').value);
+  const buyPrice = parseFloat(document.getElementById('form-buy-price').value);
+  const curPrice = parseFloat(document.getElementById('form-cur-price').value);
+  const notes    = document.getElementById('form-notes').value.trim();
+
+  if (!name || !type || isNaN(qty) || isNaN(buyPrice) || isNaN(curPrice)) return;
+
+  if (id) {
+    const inv = investments.find(i => i.id === id);
+    if (inv) Object.assign(inv, { name, ticker, type, qty, buyPrice, curPrice, notes });
+  } else {
+    investments.push({ id: newId(), name, ticker, type, qty, buyPrice, curPrice, notes });
+  }
+
+  saveData(investments);
+  render();
+  closeModal();
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.type;
+    render();
+  });
+});
+
+document.getElementById('btn-add').addEventListener('click', openAdd);
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('btn-cancel').addEventListener('click', closeModal);
+document.getElementById('delete-cancel').addEventListener('click', closeDelete);
+document.getElementById('delete-confirm').addEventListener('click', confirmDelete);
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('delete-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeDelete(); });
+
+// Demo data
+if (investments.length === 0) {
+  investments = [
+    { id: newId(), name: 'Vanguard FTSE All-World', ticker: 'VWCE', type: 'ETF',       qty: 25,  buyPrice: 98.50,  curPrice: 112.30, notes: 'Acumulação' },
+    { id: newId(), name: 'iShares Core MSCI World', ticker: 'IWDA', type: 'ETF',       qty: 40,  buyPrice: 75.20,  curPrice: 82.10,  notes: '' },
+    { id: newId(), name: 'PPR Allianz',             ticker: '',     type: 'PPR',       qty: 1,   buyPrice: 8500,   curPrice: 9200,   notes: 'Perfil moderado' },
+    { id: newId(), name: 'EDP Renováveis',          ticker: 'EDPR', type: 'Ação',      qty: 100, buyPrice: 14.80,  curPrice: 16.20,  notes: '' },
+    { id: newId(), name: 'Obrig. Tesouro 2030',     ticker: '',     type: 'Obrigação', qty: 5,   buyPrice: 1000,   curPrice: 1045,   notes: 'OT 3.35%' },
+  ];
+  saveData(investments);
+}
+
+render();
+  </script>
+</body>
+</html>

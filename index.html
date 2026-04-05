@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão de Investimentos</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Portfólio de Investimentos</h1>
+      <button id="btn-add" class="btn btn-primary">+ Adicionar</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Summary Cards -->
+    <section class="summary-grid">
+      <div class="card summary-card">
+        <span class="label">Valor Investido</span>
+        <span class="value" id="total-invested">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Valor Atual</span>
+        <span class="value" id="total-current">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Ganho / Perda</span>
+        <span class="value" id="total-gain">€0,00</span>
+      </div>
+      <div class="card summary-card">
+        <span class="label">Rentabilidade</span>
+        <span class="value" id="total-return">0,00%</span>
+      </div>
+    </section>
+
+    <!-- Allocation Bar -->
+    <section class="card allocation-section">
+      <h2>Alocação por Tipo</h2>
+      <div id="allocation-bar" class="allocation-bar"></div>
+      <div id="allocation-legend" class="allocation-legend"></div>
+    </section>
+
+    <!-- Filters -->
+    <section class="filters">
+      <button class="filter-btn active" data-type="all">Todos</button>
+      <button class="filter-btn" data-type="ETF">ETF</button>
+      <button class="filter-btn" data-type="PPR">PPR</button>
+      <button class="filter-btn" data-type="Ação">Ação</button>
+      <button class="filter-btn" data-type="Obrigação">Obrigação</button>
+      <button class="filter-btn" data-type="Cripto">Cripto</button>
+      <button class="filter-btn" data-type="Outro">Outro</button>
+    </section>
+
+    <!-- Investments Table -->
+    <section class="card table-section">
+      <table id="investments-table">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Ticker</th>
+            <th>Tipo</th>
+            <th>Qtd</th>
+            <th>Preço Compra</th>
+            <th>Preço Atual</th>
+            <th>Investido</th>
+            <th>Valor Atual</th>
+            <th>G/P</th>
+            <th>%</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="investments-body">
+          <tr id="empty-row">
+            <td colspan="11" class="empty-msg">Sem investimentos. Clique em "+ Adicionar" para começar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Adicionar Investimento</h2>
+        <button id="modal-close" class="btn-icon">&times;</button>
+      </div>
+      <form id="investment-form">
+        <input type="hidden" id="form-id" />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-name">Nome *</label>
+            <input type="text" id="form-name" placeholder="ex: Vanguard FTSE All-World" required />
+          </div>
+          <div class="form-group">
+            <label for="form-ticker">Ticker</label>
+            <input type="text" id="form-ticker" placeholder="ex: VWCE" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-type">Tipo *</label>
+            <select id="form-type" required>
+              <option value="">-- Selecionar --</option>
+              <option value="ETF">ETF</option>
+              <option value="PPR">PPR</option>
+              <option value="Ação">Ação</option>
+              <option value="Obrigação">Obrigação</option>
+              <option value="Cripto">Cripto</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="form-qty">Quantidade *</label>
+            <input type="number" id="form-qty" placeholder="ex: 10" min="0" step="any" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="form-buy-price">Preço de Compra (€) *</label>
+            <input type="number" id="form-buy-price" placeholder="ex: 100.00" min="0" step="any" required />
+          </div>
+          <div class="form-group">
+            <label for="form-cur-price">Preço Atual (€) *</label>
+            <input type="number" id="form-cur-price" placeholder="ex: 115.50" min="0" step="any" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="form-notes">Notas</label>
+          <textarea id="form-notes" placeholder="Informações adicionais..." rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-cancel" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div id="delete-overlay" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <h2>Confirmar eliminação</h2>
+      <p id="delete-msg">Tem a certeza que quer eliminar este investimento?</p>
+      <div class="modal-actions">
+        <button id="delete-cancel" class="btn btn-secondary">Cancelar</button>
+        <button id="delete-confirm" class="btn btn-danger">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
